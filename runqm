@@ -1,0 +1,121 @@
+#!/bin/bash
+#此脚本用来优化分子的结构并运用Kollman-Singh方法计算电荷，运用B3lyp基组。
+#
+#使用前请安装openbabel, 主要用来生成gamess初始inp文件并生成结果pdb。
+#
+#请提供pdb的文件名，包括后缀pdb
+#用法：
+#runqm cores mem charge pdb
+#
+#cores表示使用的cpu核心数量，可以限制线程数
+#mem 表示最大使用的内存，如果内存不够用，将自动减少线程数，但优化速度也会降低
+#charge 表示分子所具有的电荷数，比如阴离子表面活性剂为-1
+#pdb 初始pdb文件
+#
+#e.g.
+#
+#runqm 6 5 -1 file.pdb
+
+usage="用法:\nrunqm cores mem charge pdb文件\n\tcores 为使用的最大CPU核心数\n\tmem 为可以使用的最大内存数量，单位为G\n\tcharge 为分子电荷\n"
+
+cores=$1
+memory=$2
+charge=$3
+
+script_name="runqm"
+
+# 一次只允許一個實例
+alreadRun=`ps -A|grep $script_name`
+ps -A | grep "$script_name" 2>&1>/dev/null
+if [[ $? -ne 0 ]] 
+then
+    echo -e "\033[0;31m只允许一个程序实例！\033[0m\n$usage"
+    exit 1
+fi
+
+if [[ $# -ne 4 ]]
+then
+    echo -e "\033[0;31m参数个数错误！\033[0m\n$usage"
+    exit 1 #参数错误
+fi
+
+#检验pdb文件是否存在
+if [ ! -r $4 ]
+then
+    echo -e "\033[0;31mpdb文件不可读！\033[0m\n$usage"
+    exit 2 #文件不可读
+else
+    pdb=$4
+    cd `dirname $pdb`
+fi
+
+# 生成輸入文件
+pdbName=`basename $pdb .pdb`
+#产生一个随机数，防止临时文件覆盖
+random=`echo $RANDOM`
+cp ${pdbName}.pdb ${pdbName}-${random}.pdb
+pdbName=${pdbName}-${random}
+obabel -ipdb ${pdbName}.pdb -ogamin > ${pdbName}-gam.inp
+if [[ ! -f ${pdbName}-gam.inp ]]
+then
+    echo "沒有gamess輸入文件，程序退出！\n"
+fi
+
+# 修改輸入文件
+# 删除自动生成的控制参数
+sed -i -e '/ $CONTRL COORD=CART UNITS=ANGS $END/d' ${pdbName}-gam.inp
+cat > /tmp/${pdbName}-gam.inp << EOF
+ \$CONTRL   RUNTYP=OPTIMIZE SCFTYP=RHF DFTTYP=B3LYP
+            COORD=CART ICHARG=$charge             \$END
+ \$SCF      DIRSCF=.T. CONV=1.0E-08               \$END
+ \$SYSTEM   TIMLIM=50000 MWORDS=128               \$END
+ \$BASIS    GBASIS=N31 NGAUSS=6 NDFUNC=1          \$END
+ \$STATPT   NSTEP=200  OPTTOL=1.0E-06             \$END
+ ! Calculate electric potential
+ \$ELPOT    IEPOT=1 WHERE=PDC                     \$END
+ \$PDC      PTSEL=CONNOLLY CONSTR=CHARGE          \$END
+EOF
+cat ${pdbName}-gam.inp >> /tmp/${pdbName}-gam.inp
+mv /tmp/${pdbName}-gam.inp ${pdbName}-gam.inp
+#sed -i -e "s/ICHARG=0/ICHARG=$3/" ${pdbName}-gam.inp
+##sed -i -e '/$FORCE/a\ $DFT     DFTTYP=B3LYP                         $END' ${pdbName}-gam.inp
+#sed -i -e 's/$SCF     DIRSCF=.T. CONV=1.0E-08              $END/$SCF     DIRSCF=.T.                           $END/'  ${pdbName}-gam.inp
+#sed -i -e 's/ $FORCE   METHOD=ANALYTIC VIBANL=.F.           $END/ $DFT     DFTTYP=B3LYP                         $END/' ${pdbName}-gam.inp
+#sed -i -e 's/OPTTOL=1.0E-06/OPTTOL=1.0E-04/' ${pdbName}-gam.inp
+#sed -i -e '/$GUESS/a \ $ELPOT   IEPOT=1 WHERE=PDC                    $END\n $PDC     PTSEL=CONNOLLY CONSTR=CHARGE         $END' ${pdbName}-gam.inp
+
+# 循環查找合適的內存數量
+let "maxMem = $memory * 1024"
+let "mwords = $maxMem/8/$cores"
+while true
+do
+    sed -i -e "s/SYSTEM  TIMLIM=50000 MWORDS=[0-9]*/SYSTEM  TIMLIM=50000 MWORDS=$mwords/" ${pdbName}-gam.inp
+    rm ~/scr/*.*
+    rm -r ~/scr/*/*
+    rungms ${pdbName}-gam 01 $cores >& ${pdbName}-gam.log
+    checkResult=`sed -n '/exited gracefully/p' ${pdbName}-gam.log`
+    if [[ -n $checkResult ]]
+    then
+        break
+    else
+        checkResult=`sed -n '/NOT ENOUGH MEMORY TO DO CPHF/p' ${pdbName}-gam.log`
+        if [[ -n $checkResult ]]
+        then
+            need=`echo $checkResult | awk '{print $8}'`
+            let "mwords = $need/1000/1000 + 2"
+            let "nodeMem = $mwords*8"
+            let "mem = $nodeMem * $cores"
+            while [[ $mem -gt $maxMem ]]
+            do
+                ((cores--))
+                let "mem = $nodeMem * $cores"
+            done
+        else
+            exit
+        fi
+    fi
+done
+
+obabel -igamout ${pdbName}-gam.log -opdb -O ${pdbName}-opted.pdb
+rm ~/scr/*.*
+rm -r ~/scr/*/*
