@@ -53,9 +53,8 @@ def main():
         atom[0] = idx
         atom[4] = mol.get_atom(idx).atomID
     atoms_data.sort()
-    
+
     for idx, atom in enumerate(atoms_data):
-        print("atom: ", atom[5])
         equal_idx = []
         for next_idx in range(idx, len(atoms_data)):
             if atoms_data[next_idx][5] == atom[5]:
@@ -67,10 +66,8 @@ def main():
                 atoms_data[idx_new][5] = 1
         if idx != 0 and atom[5] != atoms_data[idx - 1][5]:
             last_cgr = atoms_data[idx - 1][5]
-            print("last_cgr: ", last_cgr)
             for idx_new in equal_idx:
                 atoms_data[idx_new][5] = last_cgr + 1
-        print("atom_new: ", atom[5])
 
     # [bonds]
     for bond in itp.header.moleculetype.bonds.data:

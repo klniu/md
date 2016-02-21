@@ -118,7 +118,7 @@ class Mol:
         try:
             return self.atoms[idx - 1]
         except IndexError:
-            print("Error: the idx you give for the atom is out of range.")
+            print("Error: the idx you give for the atom is out of range. idx=", idx)
             exit(1)
 
     def delete_atom(self, atom):
@@ -297,8 +297,12 @@ class Mol:
         mapper = ob.OBIsomorphismMapper.GetInstance(query);
         maps = ob.vpairUIntUInt()
         mapper.MapFirst(self.__obmol, maps);
-        return list([(i + 1, j + 1) for i, j in maps])
-
+        return list([(i + 1, j + 1) for (i, j) in maps])
+        #for pair in matches:
+        #    if mol2.get_atom(pair[0]).atomicNum != self.get_atom(pair[1]).atomicNum:
+        #        return []
+        #else:
+        #    return matches
 
 class Atom:
     def __init__(self, atom):
@@ -360,6 +364,15 @@ class Atom:
         y = self.__atom.y()
         z = self.__atom.z()
         return (x, y, z)
+
+    @property
+    def atomicNum(self):
+        '''Get the 3d coordinate of the atom.
+
+        Returns:
+            A tuple as (x, y, z).
+        '''
+        return self.__atom.GetAtomicNum()
 
     def is_hydrogen(self):
         '''If the atom is hydrogen atom.'''
