@@ -178,6 +178,8 @@ class MolPack():
                 x1 = x1 if x1 - 0.2 < self.pack['box'][0] else x1 - 0.2
                 x2 = x2 if x2 + 0.2 > self.pack['box'][3] else x2 + 0.2
                 self.results[0] += 'structure %s\n' % self.pack['pdb']
+                # 添加殘基排序选项以使膜堆砌时残基序号递增
+                self.results[0] += '\tresnumbers 3 \n'
                 self.results[0] += '\tnumber 1\n'
                 self.results[0] += '\tinside box'
                 z1 = self.pack['box'][2]
@@ -222,6 +224,8 @@ class MolPack():
             x1 = x1 if x1 - 0.2 < self.pack['box'][0] else x1 - 0.2
             x2 = x2 if x2 + 0.2 > self.pack['box'][3] else x2 + 0.2
             self.results[0] += 'structure %s\n' % self.pack['pdb']
+            # 添加殘基排序选项以使膜堆砌时残基序号递增
+            self.results[0] += '\tresnumbers 3\n'
             self.results[0] += '\tnumber 1\n'
             self.results[0] += '\tinside box'
             z1 = self.pack['box'][2]
@@ -383,6 +387,8 @@ class MolPack():
             self.results[0] += 'structure %s\n' % self.pack['pdb']
             # The number of one line molecules
             self.results[0] += '\tnumber ' + str(self.pack['align_num'][0]) + '\n'
+            # 添加殘基排序选项以使膜堆砌时残基序号递增
+            self.results[0] += '\tresnumbers 3\n'
             self.results[0] += '\tinside box'
             z1 = self.pack['box'][2]
             z2 = self.pack['box'][5]
@@ -426,6 +432,8 @@ class MolPack():
         x1, x2 = self.pack['box'][0], self.pack['box'][3]
         y1, y2 = self.pack['box'][1], self.pack['box'][4]
         self.results[0] += 'structure %s\n' % self.pack['pdb']
+        # 添加殘基排序选项以使膜堆砌时残基序号递增
+        self.results[0] += '\tresnumbers 3\n'
         self.results[0] += '\tnumber ' + str(self.pack['align_num'][0] * self.pack['align_num'][1]) + '\n'
         self.results[0] += '\tinside box'
         z1 = self.pack['box'][2]
