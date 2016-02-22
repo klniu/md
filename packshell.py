@@ -179,7 +179,7 @@ class MolPack():
                 x2 = x2 if x2 + 0.2 > self.pack['box'][3] else x2 + 0.2
                 self.results[0] += 'structure %s\n' % self.pack['pdb']
                 # 添加殘基排序选项以使膜堆砌时残基序号递增
-                self.results[0] += '\tresnumbers 3 \n'
+                self.results[0] += '\tresnumbers 3\n'
                 self.results[0] += '\tnumber 1\n'
                 self.results[0] += '\tinside box'
                 z1 = self.pack['box'][2]
