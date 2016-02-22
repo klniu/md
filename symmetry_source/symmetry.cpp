@@ -3,6 +3,16 @@
 
 Symmetry::Symmetry(OBMol *mol, unsigned timeout)
 {
+
+//    OBGraphSym graphsym(mol);
+//    unsigned a = 0;
+//    std::vector<unsigned> symmetry_classes(a);
+//    graphsym.GetSymmetry(symmetry_classes);
+//    std::vector<OBIsomorphismMapper::Mapping> automorphisms;
+//    MapperFunctor mapperFunctor(automorphisms);
+//    FindAutomorphisms(mapperFunctor, mol, symmetry_classes);
+
+
     std::vector<OBIsomorphismMapper::Mapping> automorphisms;
     MapperFunctor mapperFunctor(automorphisms);
     OBQuery *query = CompileMoleculeQuery(mol);

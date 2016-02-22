@@ -39,7 +39,7 @@ int main(int argc,char **argv)
         // SymmetryMapFuctor symmetryMapFuctor(automorphisms);
         // FindAutomorphisms(symmetryMapFuctor, &mol, symmetry_classes);
 
-        Symmetry symmetry(&mol, 36000);
+        Symmetry symmetry(&mol, 3600000);
         vuset symmetrys = symmetry.getSymmetry();
         std::string result = "[";
         for (vuset::iterator i = symmetrys.begin(); i != symmetrys.end(); ++i){

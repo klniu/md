@@ -193,14 +193,14 @@ class Mol:
             a tuple such as [(1,2,3), (4,5)]
         '''
         # Get symmetry classes
-        gs = ob.OBGraphSym(self.obmol)
+        gs = ob.OBGraphSym(self.__obmol)
         symclasses = ob.vectorUnsignedInt()
         gs.GetSymmetry(symclasses)
 
         # Get automorphisms
         automorphs = ob.vvpairUIntUInt()
         print("\nGet symmetrys python version: When there are too many atoms. The program will crash  as a error: memory exceed or timeout. Please don't use this result. Please use the cpp version.\n")
-        ob.FindAutomorphisms(self.__obmol, automorphs, symclasses, ob.OBBitVec(), 40240000)
+        ob.FindAutomorphisms(self.__obmol, automorphs, symclasses, ob.OBBitVec(), 40960000)
         amlist = []
 
         for x in automorphs:
