@@ -284,7 +284,7 @@ class Mol:
         return self.getSubstructureMaps(mol2)
 
 
-    def getSubstructureMaps(self, mol2):
+    def getSubstructureMaps(self, mol2, includeAtoms=[]):
         '''Find the indice maps of substructure and the molecule.
 
         Args:
@@ -295,9 +295,27 @@ class Mol:
         '''
         query = ob.CompileMoleculeQuery(mol2.__obmol)
         mapper = ob.OBIsomorphismMapper.GetInstance(query);
-        maps = ob.vpairUIntUInt()
-        mapper.MapFirst(self.__obmol, maps);
-        return list([(i + 1, j + 1) for (i, j) in maps])
+        if len(includeAtoms) == 0:
+            maps = ob.vpairUIntUInt()
+            mapper.MapFirst(self.__obmol, maps);
+            return list([(i + 1, j + 1) for (i, j) in maps])
+        else:
+            maps = ob.vvpairUIntUInt()
+            mapper.MapAll(self.__obmol, maps, ob.OBBitVec(), 40960000)
+            for group in maps:
+                # flag for if include_atoms is in the group
+                notThis = False
+                mol1List = [j for (i, j) in group]
+                for i in includeAtoms:
+                    if not i in mol1List:
+                        notThis = True
+                        break
+                if notThis:
+                   continue
+                else:
+                    return list([(i + 1, j + 1) for (i, j) in group])
+            else:
+                return []
         #for pair in matches:
         #    if mol2.get_atom(pair[0]).atomicNum != self.get_atom(pair[1]).atomicNum:
         #        return []

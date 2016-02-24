@@ -26,6 +26,7 @@ def main():
     parser.add_argument('-t', '--top2', required=True, help='The topology file of the second molecule (fragment).')
     parser.add_argument('-p', '--pairs', help='Optional. The match pairs of atoms indices in the second molecule and the first molecule, optional. Please give a string whose format is python list. e.g. [(1, 2), (4, 5)]. If you do not assign, the program will calculate it. ')
     parser.add_argument('-o', '--output', required=True, help='Output file')
+    parser.add_argument('--include_atoms', help='--include_atoms "[atom_index, ...]", 指定第一个分子中必须包含的原子索引(从1开始)，用于第一个分子中包含多个匹配片段时指定匹配的部分, 例如[1,2]')
     args = parser.parse_args()
 
     itpfile = args.top2
@@ -34,7 +35,15 @@ def main():
     if args.pairs:
         matches = eval(args.pairs)
     else:
-        matches = mol.getSubstructureMaps(moltoolkit.Mol(args.mol2))
+        if args.include_atoms:
+            include_atoms = eval(args.include_atoms)
+            if isinstance(include_atoms, list):
+                matches = mol.getSubstructureMaps(moltoolkit.Mol(args.mol2), include_atoms)
+            else:
+                print('Error: 错误的include_atoms格式，应类似为"[1,2,3]"')
+                exit(1)
+        else:
+            matches = mol.getSubstructureMaps(moltoolkit.Mol(args.mol2))
 
     if len(matches) == 0:
         print("Error: The small molecule is not a fragment of the molecule.")
