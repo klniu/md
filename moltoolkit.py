@@ -23,17 +23,20 @@ import argparse
 
 class Mol:
     '''A toolkit to get the information of a molecule, manipulate atom and so on.'''
-    def __init__(self, mol_file):
-        if not os.path.exists(mol_file):
-            print('PDB file %s is not exist!' % mol_file)
-            exit(1)
-        self.__fileformat = mol_file[-3:]
-        self.__filename = mol_file
-
+    def __init__(self, format, file_or_str):
+        self.__fileformat = format
+        self.__filename = file_or_str
         self.__obConversion = ob.OBConversion()
         self.__obConversion.SetInAndOutFormats(self.__fileformat, 'smi')
         self.__obmol = ob.OBMol()
-        self.__obConversion.ReadFile(self.__obmol, self.__filename)
+        if format == "pdb":
+            if not os.path.exists(file_or_str):
+                print('PDB file %s is not exist!' % file_or_str)
+                exit(1)
+            else:
+                self.__obConversion.ReadFile(self.__obmol, self.__filename)
+        elif format == "smi":
+            self.__obConversion.ReadString(self.__obmol, self.__filename)
 
     @property
     def smiles(self):
@@ -167,77 +170,30 @@ class Mol:
         return [abs(atom1.coordinates[i] - atom2.coordinates[i]) for i in range(3)]
 
     @property
-    def symmetrys(self):
+    def symmetries(self):
         '''Find the atom symmetrys in the molecule.
-
-        There are two versions to calculate the symmetrys of the molecule: C++ or Python.
-        The former is more accurate. The latter will crash when there are two many atoms in the molecule.
-        So the program will check if there is a C++ version, if not, using python.
 
         @Returns
             a tuple such as [[1,2,3], [4,5]]
         '''
-        if not shutil.which('Symmetry'):
-            return self.__get_symmetrys_python()
-        else:
-            return self.__get_symmetrys_cpp()
-
-    def __get_symmetrys_python(self):
-        '''Find the atom symmetrys in the molecule (Python Version).
-
-        There are two versions to calculate the symmetrys of the molecule: C++ or Python.
-        The former is more accurate. The latter will crash when there are two many atoms in the molecule.
-        So the program will check if there is a C++ version, if not, using python.
-
-        @Returns
-            a tuple such as [(1,2,3), (4,5)]
-        '''
         # Get symmetry classes
         gs = ob.OBGraphSym(self.__obmol)
-        symclasses = ob.vectorUnsignedInt()
-        gs.GetSymmetry(symclasses)
+        sym_classes = ob.vectorUnsignedInt()
+        gs.GetSymmetry(sym_classes)
+        sym_list = [x for x in sym_classes]
 
-        # Get automorphisms
-        automorphs = ob.vvpairUIntUInt()
-        print("\nGet symmetrys python version: When there are too many atoms. The program will crash  as a error: memory exceed or timeout. Please don't use this result. Please use the cpp version.\n")
-        ob.FindAutomorphisms(self.__obmol, automorphs, symclasses, ob.OBBitVec(), 40960000)
-        amlist = []
+        sym_maps = {}
+        i = 0
+        for atom in ob.OBMolAtomIter(self.__obmol):
+            sym_grp = sym_list[i]
+            if sym_grp in sym_maps:
+                sym_maps[sym_grp].append(atom.GetIdx())
+            else:
+                sym_maps[sym_grp] = [atom.GetIdx()]
+            i += 1
 
-        for x in automorphs:
-            # openbabel有時原子索引從0開始，需要校驗一下
-            for (y, z) in x:
-                if y != z:
-                    pair = sorted([y + 1, z + 1])
-                    if not pair in amlist:
-                        amlist.append(pair)
-        amlist.sort()
+        return [v for k, v in sym_maps.items()]
 
-        # Merge all the symmetrys into one list合并所有的對稱原子至一個小列表內
-        last_amlist = []
-        while len(amlist) > 0:
-            same_sym = self.__find_same_item_list(amlist[0], amlist)
-            temp_list = []
-            for i in same_sym:
-                temp_list += list(i)
-                amlist.remove(list(i))
-            last_amlist.append(sorted(list(set(temp_list))))
-        return last_amlist
-
-    def __get_symmetrys_cpp(self):
-        '''Find the atom symmetrys in the molecule (C++ Version).
-
-        There are two versions to calculate the symmetrys of the molecule: C++ or Python.
-        The former is more accurate. The latter will crash when there are two many atoms in the molecule.
-        So the program will check if there is a C++ version, if not, using python.
-
-        It needs a executable program in path (Symmetry).
-        @Returns
-            a tuple such as [(1,2,3), (4,5)]
-        '''
-        result = subprocess.check_output(["Symmetry", self.__fileformat, self.__filename], universal_newlines=True)
-        result1 = '[' + result.split('\n')[0] + ']'
-        result_list = eval(result1)
-        return result_list
 
     def __find_same_item_list(self, list_item, list_list):
         ''' 根据一个列表a，此列表a内包含有一个列表b，根据所给的参数列表c，循环c中的元素d，在b中查找是否与d相同的元素，如果有，b中的其它元素也要继续像a一样在所有小列表b中查找，就像一个多叉树一样#
@@ -298,6 +254,7 @@ class Mol:
         if len(includeAtoms) == 0:
             maps = ob.vpairUIntUInt()
             mapper.MapFirst(self.__obmol, maps);
+            print(list([(i + 1, j + 1) for (i, j) in maps]))
             return list([(i + 1, j + 1) for (i, j) in maps])
         else:
             maps = ob.vvpairUIntUInt()
@@ -409,7 +366,7 @@ def main():
     parser.add_argument('--substructuremaps', help='Get the indices matches of a molecule and its substructure. Please give a molecule file as argument.')
     parser.add_argument('molfile', help='molecule file')
     args = parser.parse_args()
-    mol = Mol(args.molfile)
+    mol = Mol("pdb", args.molfile)
     # 默认输出
     print(mol)
     if args.coordinate:
@@ -426,7 +383,7 @@ def main():
         print('Six extreme coordinate of molecule:', mol.most_coordinates)
 
     if args.symmetry:
-        print('分子對稱原子對:', mol.symmetrys)
+        print('分子對稱原子對:', mol.symmetries)
 
     if args.identical:
         print('Identical Molecule Matches: ', mol.getIdenticalMaps(Mol(args.identical)))

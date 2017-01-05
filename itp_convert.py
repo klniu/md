@@ -59,10 +59,13 @@ def main():
     atoms_data = itp.header.moleculetype.atoms.data
     for atom in atoms_data:
         idx = matches_dict[atom[0]]
+        # exchange the index
         atom[0] = idx
+        # get the atom type to replace the origin ones in itp
         atom[4] = mol.get_atom(idx).atomID
     atoms_data.sort()
 
+    # make cgnr
     for idx, atom in enumerate(atoms_data):
         equal_idx = []
         for next_idx in range(idx, len(atoms_data)):

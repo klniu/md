@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description='Reassign the atoms charge according the symmetrys of the molecule.\n\nThe format of charge file must be like:\nindex\tcharge\nindex\tcharge\n...', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--molfile', required=True, help='Molecule file')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-s', '--symmetrys', help='Symmetrys, optional. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]]. If you do not assign, the program will calculate it, but maybe it needs a long time. ')
+    group.add_argument('-s', '--symmetrys', help='Symmetrys, optional. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]]. If you do not assign, the program will calculate it.')
     group.add_argument('--extrasymmetrys', help='Extra Symmetrys, optional. Some symmetrys like the oxygen atoms in sulfonate will not be indentied by program, but you can specify them using this option. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]].')
     parser.add_argument('-c', '--chargefile', required=True, help='Charges file')
     parser.add_argument('-e', '--charge', type=int, default=0, help='Charge of the whole molecule')
@@ -23,10 +23,10 @@ def main():
 
     mol = moltoolkit.Mol(args.molfile)
     # Get molecule symmetrys
-    if args.symmetrys:
+    if args.symmetries:
         symmetrys = eval(args.symmetry)
     else:
-        symmetrys = mol.symmetrys
+        symmetrys = mol.symmetries
 
     if args.extrasymmetrys:
         symmetrys += eval(args.extrasymmetrys)
