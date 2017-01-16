@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # Copyright (C) Hugh Gao
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -23,7 +24,7 @@ import argparse
 
 class Mol:
     '''A toolkit to get the information of a molecule, manipulate atom and so on.'''
-    def __init__(self, format, file_or_str):
+    def __init__(self, file_or_str, format="pdb"):
         self.__fileformat = format
         self.__filename = file_or_str
         self.__obConversion = ob.OBConversion()
@@ -83,7 +84,6 @@ class Mol:
         Returns:
             a tuple as (x_dis, y_dis, z_dis)
         '''
-        self.most_coordinates
         return (self.__largestX - self.__smallestX, self.__largestY - self.__smallestY,
                 self.__largestZ - self.__smallestZ)
 
@@ -196,7 +196,8 @@ class Mol:
 
 
     def __find_same_item_list(self, list_item, list_list):
-        ''' 根据一个列表a，此列表a内包含有一个列表b，根据所给的参数列表c，循环c中的元素d，在b中查找是否与d相同的元素，如果有，b中的其它元素也要继续像a一样在所有小列表b中查找，就像一个多叉树一样#
+        ''' 根据一个列表a，此列表a内包含有一个列表b，根据所给的参数列表c，循环c中的元素d，在b中查找是否与d相同的元素，如果有，
+        b中的其它元素也要继续像a一样在所有小列表b中查找，就像一个多叉树一样#
 
         Args
             list_item 要查找的元素所组成的列表
@@ -240,7 +241,7 @@ class Mol:
         return self.getSubstructureMaps(mol2)
 
 
-    def getSubstructureMaps(self, mol2, includeAtoms=[]):
+    def getSubstructureMaps(self, mol2):
         '''Find the indice maps of substructure and the molecule.
 
         Args:
@@ -250,34 +251,21 @@ class Mol:
             a matches list contains indices of the substructure and the moleculesuch such as [(1,4), (2, 5)], if none, return a empty list
         '''
         query = ob.CompileMoleculeQuery(mol2.__obmol)
-        mapper = ob.OBIsomorphismMapper.GetInstance(query);
-        if len(includeAtoms) == 0:
-            maps = ob.vpairUIntUInt()
-            mapper.MapFirst(self.__obmol, maps);
-            print(list([(i + 1, j + 1) for (i, j) in maps]))
-            return list([(i + 1, j + 1) for (i, j) in maps])
-        else:
-            maps = ob.vvpairUIntUInt()
-            mapper.MapAll(self.__obmol, maps, ob.OBBitVec(), 40960000)
-            for group in maps:
-                # flag for if include_atoms is in the group
-                notThis = False
-                mol1List = [j for (i, j) in group]
-                for i in includeAtoms:
-                    if not i in mol1List:
-                        notThis = True
-                        break
-                if notThis:
-                   continue
-                else:
-                    return list([(i + 1, j + 1) for (i, j) in group])
-            else:
-                return []
-        #for pair in matches:
-        #    if mol2.get_atom(pair[0]).atomicNum != self.get_atom(pair[1]).atomicNum:
-        #        return []
-        #else:
-        #    return matches
+        mapper = ob.OBIsomorphismMapper.GetInstance(query)
+        # it can't be implement now
+        # masks = ob.OBBitVec()
+        # for a in includeAtoms:
+        #    masks.SetBitOn(a)
+        maps = ob.vpairUIntUInt()
+        # mapper.MapFirst(self.__obmol, maps, masks)
+        mapper.MapFirst(self.__obmol, maps)
+        result = list([(i + 1, j + 1) for (i, j) in maps])
+        # remove the ones which not is the same type atom
+        result1 = [pair for pair in result if self.get_atom(pair[1]).type == mol2.get_atom(pair[0]).type]
+        if len(result) != len(result1):
+            print("Warining: because the substructure may have extra hydrogen atoms at the end, "
+                  "so the matching atoms with different types was removed.")
+        return result1
 
 class Atom:
     def __init__(self, atom):
@@ -366,7 +354,7 @@ def main():
     parser.add_argument('--substructuremaps', help='Get the indices matches of a molecule and its substructure. Please give a molecule file as argument.')
     parser.add_argument('molfile', help='molecule file')
     args = parser.parse_args()
-    mol = Mol("pdb", args.molfile)
+    mol = Mol(args.molfile)
     # 默认输出
     print(mol)
     if args.coordinate:

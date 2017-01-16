@@ -11,28 +11,28 @@ import argparse
 import moltoolkit
 
 def main():
-    parser = argparse.ArgumentParser(description='Reassign the atoms charge according the symmetrys of the molecule.\n\nThe format of charge file must be like:\nindex\tcharge\nindex\tcharge\n...', formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Reassign the atoms charge according the symmetries of the molecule.\n\nThe format of charge file must be like:\nindex\tcharge\nindex\tcharge\n...', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--molfile', required=True, help='Molecule file')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-s', '--symmetrys', help='Symmetrys, optional. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]]. If you do not assign, the program will calculate it.')
-    group.add_argument('--extrasymmetrys', help='Extra Symmetrys, optional. Some symmetrys like the oxygen atoms in sulfonate will not be indentied by program, but you can specify them using this option. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]].')
+    group.add_argument('-s', '--symmetries', help='Symmetries, optional. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]]. If you do not assign, the program will calculate it.')
+    group.add_argument('--extrasymmetries', help='Extra Symmetries, optional. Some symmetries like the oxygen atoms in sulfonate will not be indentied by program, but you can specify them using this option. Please give a string whose format is python list. e.g. [[1, 2, 3], [4, 5]].')
     parser.add_argument('-c', '--chargefile', required=True, help='Charges file')
     parser.add_argument('-e', '--charge', type=int, default=0, help='Charge of the whole molecule')
     parser.add_argument('-o', '--output', required=True, help='Output file')
     args = parser.parse_args()
 
     mol = moltoolkit.Mol(args.molfile)
-    # Get molecule symmetrys
+    # Get molecule symmetries
     if args.symmetries:
-        symmetrys = eval(args.symmetry)
+        symmetries = eval(args.symmetries)
     else:
-        symmetrys = mol.symmetries
+        symmetries = mol.symmetries
 
-    if args.extrasymmetrys:
-        symmetrys += eval(args.extrasymmetrys)
-    # symmetrys = [[1, 7], [2, 3, 4, 8, 9, 10]]
-    if len(symmetrys) == 0:
-        print('Error: Get symmetrys of molecule failure.')
+    if args.extrasymmetries:
+        symmetries += eval(args.extrasymmetries)
+    # symmetries = [[1, 7], [2, 3, 4, 8, 9, 10]]
+    if len(symmetries) == 0:
+        print('Error: Get symmetries of molecule failure.')
         exit(1)
 
     # Analyze charges file
@@ -58,7 +58,7 @@ def main():
         exit(1)
 
     # reassign charges
-    for sym in symmetrys:
+    for sym in symmetries:
         charge_average = sum([atoms[j] for j in sym]) / len(sym)
         for index in sym:
             try:
