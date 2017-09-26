@@ -84,6 +84,7 @@ class Mol:
         Returns:
             a tuple as (x_dis, y_dis, z_dis)
         '''
+        self.most_coordinates
         return (self.__largestX - self.__smallestX, self.__largestY - self.__smallestY,
                 self.__largestZ - self.__smallestZ)
 
