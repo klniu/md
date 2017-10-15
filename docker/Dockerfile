@@ -3,6 +3,7 @@ MAINTAINER Hugh Gao<hughgao01@gmail.com>
 
 COPY ./sources.list /etc/apt/
 
+ENV python_version 3.5
 RUN mkdir -p ~/temp /opt/md \
     && cd ~/temp \
     && apt-get update \
@@ -15,9 +16,10 @@ RUN mkdir -p ~/temp /opt/md \
     && cmake ../openbabel-openbabel-2-4-1 -DCMAKE_INSTALL_PREFIX=/opt/openbabel -DPYTHON_BINDINGS=ON -DRUN_SWIG=ON -DPYTHON_EXECUTABLE=/usr/bin/python3 \
     && make -j4 \
     && make install \
-    && py_version=`python3 --version|cut -c8-10` \
-    && echo 'export PATH=$PATH:/opt/openbabel/bin:/opt/md' >> /etc/profile  \
-    && echo 'export PYTHONPATH=${PYTHONPATH}:/opt/openbabel/lib/python${py_version}/site-packages:/opt/md' >> /etc/profile \
     && git clone https://github.com/klniu/md.git /opt/md \
     && rm -r ~/temp \
     && apt-get -y clean && apt-get -y autoremove
+# RUN py_version=`python3 --version|cut -c8-10` \
+ENV PATH="/opt/openbabel/bin:/opt/md:${PATH}"
+# ENV PYTHONPATH="/opt/openbabel/lib/python${py_version}/site-packages:/opt/md:${PYTHONPATH}"
+ENV PYTHONPATH="/opt/openbabel/lib/python${python_version}/site-packages:/opt/md:${PYTHONPATH}"
