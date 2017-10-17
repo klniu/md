@@ -4,8 +4,7 @@ MAINTAINER Hugh Gao<hughgao01@gmail.com>
 COPY ./sources.list /etc/apt/
 
 ENV python_version 3.5
-RUN useradd -r -g users klniu \
-    && mkdir -p ~/temp /opt/md \
+RUN mkdir -p ~/temp /opt/md \
     && cd ~/temp \
     && apt-get update \
     && apt-get -y upgrade \
